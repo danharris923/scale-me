@@ -1,0 +1,68 @@
+{
+  "name": "{{ project_name|kebab_case }}",
+  "version": "1.0.0",
+  "private": true,
+  "description": "{{ description }}",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "type-check": "tsc --noEmit",
+    "export": "next export",
+    "analyze": "cross-env ANALYZE=true next build",
+    "lighthouse": "lhci autorun"
+  },
+  "dependencies": {
+    "next": "^14.0.0",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^5.2.0",
+    "@types/node": "^20.8.0",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "tailwindcss": "^3.3.0",
+    "autoprefixer": "^10.4.0",
+    "postcss": "^8.4.0",
+    "googleapis": "^128.0.0",
+    "google-auth-library": "^9.0.0",
+    "swr": "^2.2.0",
+    "date-fns": "^2.30.0"
+  },
+  "devDependencies": {
+    "eslint": "^8.51.0",
+    "eslint-config-next": "^14.0.0",
+    "@next/bundle-analyzer": "^14.0.0",
+    "@lhci/cli": "^0.12.0",
+    "cross-env": "^7.0.3"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
+  "keywords": [
+    "{{ niche }}",
+    "affiliate marketing",
+    "ecommerce",
+    "deals",
+    "shopping",
+    "{{ brand_name|kebab_case }}"
+  ],
+  "author": {
+    "name": "{{ brand_name }}",
+    "url": "{{ domain or 'https://example.com' }}"
+  },
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/{{ brand_name|kebab_case }}/{{ project_name|kebab_case }}.git"
+  },
+  "homepage": "{{ domain or 'https://example.com' }}",
+  "vercel": {
+    "functions": {
+      "pages/api/**/*.ts": {
+        "runtime": "nodejs18.x"
+      }
+    }
+  }
+}

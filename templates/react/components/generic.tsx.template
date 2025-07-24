@@ -1,0 +1,62 @@
+import React from 'react';
+
+interface {{ name }}Props {
+  {% for prop_name, prop_type in props.items() %}
+  {{ prop_name }}: {{ prop_type }};
+  {% endfor %}
+  className?: string;
+  children?: React.ReactNode;
+}
+
+const {{ name }}: React.FC<{{ name }}Props> = ({
+  {% for prop_name in props.keys() %}
+  {{ prop_name }},
+  {% endfor %}
+  className = '',
+  children
+}) => {
+  return (
+    <div className={`{{ name.lower() }}-component ${className}`}>
+      {/* Component Content */}
+      <div className="p-4 bg-white rounded-lg shadow-md">
+        <h2 className="text-xl font-semibold text-gray-900 mb-4">
+          {{ name }}
+        </h2>
+        
+        {/* Dynamic Content */}
+        <div className="space-y-4">
+          {children}
+          
+          {/* Research-informed elements */}
+          {% if research_insights %}
+          <div className="mt-6">
+            {% for insight in research_insights %}
+            <div className="mb-4 p-3 bg-{{ conversion_colors.primary or 'blue-50' }} rounded-lg">
+              <p className="text-sm text-{{ conversion_colors.primary or 'blue-800' }}">
+                {{ insight.text_content }}
+              </p>
+              <span className="text-xs text-{{ conversion_colors.primary or 'blue-600' }} font-medium">
+                Based on: {{ insight.psychology_principle }}
+              </span>
+            </div>
+            {% endfor %}
+          </div>
+          {% endif %}
+          
+          {/* Trust signals */}
+          {% if trust_signals %}
+          <div className="flex flex-wrap gap-2">
+            {% for signal in trust_signals[:3] %}
+            <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-green-100 text-green-800 rounded">
+              ✓ {{ signal }}
+            </span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default {{ name }};

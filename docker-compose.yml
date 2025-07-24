@@ -1,0 +1,173 @@
+version: '3.8'
+
+services:
+  # Main application service
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: affiliate-website-generator
+    environment:
+      - ENVIRONMENT=development
+      - LOG_LEVEL=INFO
+      - PYTHONPATH=/app
+      # AI API Keys (set in .env file)
+      - OPENAI_API_KEY=${OPENAI_API_KEY:-}
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      # Google Sheets Integration (optional)
+      - GOOGLE_SHEETS_API_KEY=${GOOGLE_SHEETS_API_KEY:-}
+      - GOOGLE_SERVICE_ACCOUNT_FILE=${GOOGLE_SERVICE_ACCOUNT_FILE:-}
+      # Web Research Configuration
+      - WEB_RESEARCH_DELAY=${WEB_RESEARCH_DELAY:-1.0}
+      - MAX_RESEARCH_SOURCES=${MAX_RESEARCH_SOURCES:-10}
+      # Output Configuration
+      - OUTPUT_DIRECTORY=./generated
+      - TEMPLATE_DIRECTORY=./templates
+    volumes:
+      # Mount source code for live development
+      - .:/app
+      # Mount generated websites directory
+      - ./generated:/app/generated
+      # Mount logs directory
+      - ./logs:/app/logs
+      # Cache pip packages
+      - pip-cache:/root/.cache/pip
+      # Preserve bash history
+      - bash-history:/home/app/.bash_history
+    ports:
+      - "8000:8000"  # Application port
+      - "5678:5678"  # Debug port
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import agents.website_generator_agent; print('OK')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Testing service (separate from main app)
+  test:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: testing
+    container_name: affiliate-website-generator-tests
+    environment:
+      - ENVIRONMENT=testing
+      - PYTHONPATH=/app
+      # Test-specific environment variables
+      - PYTEST_DISABLE_PLUGIN_AUTOLOAD=1
+      - COVERAGE_PROCESS_START=/app/.coveragerc
+    volumes:
+      - .:/app
+      - ./test-results:/app/test-results
+      - ./htmlcov:/app/htmlcov
+    command: >
+      sh -c "
+        echo '🧪 Running comprehensive test suite...' &&
+        pytest tests/ -v 
+          --cov=agents 
+          --cov=tools 
+          --cov=cli 
+          --cov-report=html:/app/htmlcov 
+          --cov-report=term-missing 
+          --junit-xml=/app/test-results/junit.xml 
+          --html=/app/test-results/report.html 
+          --self-contained-html
+      "
+    profiles:
+      - testing
+
+  # Code quality service
+  lint:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    container_name: affiliate-website-generator-lint
+    environment:
+      - ENVIRONMENT=development
+      - PYTHONPATH=/app
+    volumes:
+      - .:/app
+    command: >
+      sh -c "
+        echo '🔍 Running code quality checks...' &&
+        echo 'Checking with ruff...' &&
+        ruff check . --output-format=github &&
+        echo 'Checking types with mypy...' &&
+        mypy . --show-error-codes &&
+        echo 'Checking formatting with black...' &&
+        black --check --diff . &&
+        echo '✅ All code quality checks passed!'
+      "
+    profiles:
+      - quality
+
+  # Documentation service (for serving docs locally)
+  docs:
+    image: nginx:alpine
+    container_name: affiliate-website-generator-docs
+    ports:
+      - "8080:80"
+    volumes:
+      - ./docs:/usr/share/nginx/html:ro
+      - ./htmlcov:/usr/share/nginx/html/coverage:ro
+      - ./test-results:/usr/share/nginx/html/test-results:ro
+    restart: unless-stopped
+    profiles:
+      - docs
+
+  # Redis service (for caching research results)
+  redis:
+    image: redis:7-alpine
+    container_name: affiliate-website-generator-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    profiles:
+      - cache
+
+  # PostgreSQL service (for storing generated website metadata)
+  postgres:
+    image: postgres:15-alpine
+    container_name: affiliate-website-generator-db
+    environment:
+      - POSTGRES_DB=affiliate_generator
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-affiliate_generator_dev}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+    profiles:
+      - database
+
+volumes:
+  pip-cache:
+  bash-history:
+  redis-data:
+  postgres-data:
+
+# Network for service communication
+networks:
+  default:
+    name: affiliate-website-generator-network

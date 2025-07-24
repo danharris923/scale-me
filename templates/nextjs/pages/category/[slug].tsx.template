@@ -1,0 +1,446 @@
+import React, { useState, useMemo } from 'react';
+import Head from 'next/head';
+import { GetStaticPaths, GetStaticProps } from 'next';
+import { useRouter } from 'next/router';
+import Navigation from '../../components/Navigation';
+import ProductCard from '../../components/ProductCard';
+import Footer from '../../components/Footer';
+import useGoogleSheets from '../../hooks/useGoogleSheets';
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  image_url: string;
+  affiliate_url: string;
+  category: string;
+  description?: string;
+  discount_percent?: number;
+  is_featured: boolean;
+  stock_status: 'in_stock' | 'low_stock' | 'out_of_stock';
+}
+
+interface CategoryPageProps {
+  brandName: string;
+  categories: string[];
+  category: {
+    name: string;
+    slug: string;
+    description: string;
+  };
+  seoData: {
+    title: string;
+    description: string;
+    keywords: string[];
+  };
+  sheetsConfig: {
+    sheetId: string;
+    range: string;
+  };
+}
+
+const CategoryPage: React.FC<CategoryPageProps> = ({
+  brandName,
+  categories,
+  category,
+  seoData,
+  sheetsConfig
+}) => {
+  const router = useRouter();
+  const [sortBy, setSortBy] = useState<'name' | 'price' | 'discount'>('name');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('asc');
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 1000]);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const { products, loading, error } = useGoogleSheets({
+    sheetId: sheetsConfig.sheetId,
+    range: sheetsConfig.range,
+    category: category.name,
+    cacheDuration: 300000
+  });
+
+  // Filter and sort products
+  const filteredAndSortedProducts = useMemo(() => {
+    let filtered = products.filter(product => {
+      // Category filter
+      const matchesCategory = product.category.toLowerCase() === category.name.toLowerCase();
+      
+      // Price range filter
+      const matchesPriceRange = product.price >= priceRange[0] && product.price <= priceRange[1];
+      
+      return matchesCategory && matchesPriceRange;
+    });
+
+    // Sort products
+    filtered.sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'name':
+          comparison = a.name.localeCompare(b.name);
+          break;
+        case 'price':
+          comparison = a.price - b.price;
+          break;
+        case 'discount':
+          const aDiscount = a.discount_percent || 0;
+          const bDiscount = b.discount_percent || 0;
+          comparison = bDiscount - aDiscount; // Higher discount first
+          break;
+        default:
+          comparison = 0;
+      }
+      
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+    return filtered;
+  }, [products, category.name, priceRange, sortBy, sortOrder]);
+
+  const maxPrice = useMemo(() => {
+    return Math.max(...products.map(p => p.price), 1000);
+  }, [products]);
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    "name": `${category.name} - ${brandName}`,
+    "description": seoData.description,
+    "url": `{{ domain or 'https://example.com' }}/category/${category.slug}`,
+    "isPartOf": {
+      "@type": "WebSite",
+      "name": brandName,
+      "url": "{{ domain or 'https://example.com' }}"
+    },
+    "mainEntity": {
+      "@type": "ItemList",
+      "numberOfItems": filteredAndSortedProducts.length,
+      "itemListElement": filteredAndSortedProducts.slice(0, 10).map((product, index) => ({
+        "@type": "ListItem",
+        "position": index + 1,
+        "item": {
+          "@type": "Product",
+          "name": product.name,
+          "description": product.description,
+          "image": product.image_url,
+          "url": `{{ domain or 'https://example.com' }}/product/${product.id}`,
+          "offers": {
+            "@type": "Offer",
+            "price": product.price,
+            "priceCurrency": "USD",
+            "availability": product.stock_status === 'in_stock' ? "https://schema.org/InStock" : "https://schema.org/OutOfStock"
+          }
+        }
+      }))
+    }
+  };
+
+  if (router.isFallback) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-{{ conversion_colors.primary or 'blue-600' }}"></div>
+          <p className="mt-4 text-gray-600">Loading category...</p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <>
+      <Head>
+        <title>{seoData.title}</title>
+        <meta name="description" content={seoData.description} />
+        <meta name="keywords" content={seoData.keywords.join(', ')} />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        
+        {/* Open Graph */}
+        <meta property="og:title" content={seoData.title} />
+        <meta property="og:description" content={seoData.description} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content={`{{ domain or 'https://example.com' }}/category/${category.slug}`} />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoData.title} />
+        <meta name="twitter:description" content={seoData.description} />
+        
+        {/* Canonical URL */}
+        <link rel="canonical" href={`{{ domain or 'https://example.com' }}/category/${category.slug}`} />
+        
+        {/* JSON-LD Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+      </Head>
+
+      <div className="min-h-screen bg-gray-50">
+        {/* Navigation */}
+        <Navigation
+          brandName={brandName}
+          categories={categories}
+          showSearch={true}
+        />
+
+        {/* Breadcrumbs */}
+        <div className="bg-white border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <nav className="flex" aria-label="Breadcrumb">
+              <ol className="flex items-center space-x-4">
+                <li>
+                  <a href="/" className="text-gray-400 hover:text-gray-500">
+                    Home
+                  </a>
+                </li>
+                <li>
+                  <div className="flex items-center">
+                    <svg className="flex-shrink-0 h-5 w-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <a href="/categories" className="ml-4 text-gray-400 hover:text-gray-500">
+                      Categories
+                    </a>
+                  </div>
+                </li>
+                <li>
+                  <div className="flex items-center">
+                    <svg className="flex-shrink-0 h-5 w-5 text-gray-300" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clipRule="evenodd" />
+                    </svg>
+                    <span className="ml-4 text-gray-500 font-medium">
+                      {category.name}
+                    </span>
+                  </div>
+                </li>
+              </ol>
+            </nav>
+          </div>
+        </div>
+
+        {/* Category Header */}
+        <div className="bg-white border-b">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div className="text-center">
+              <h1 className="text-4xl font-bold text-gray-900 mb-4">
+                {category.name}
+              </h1>
+              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+                {category.description}
+              </p>
+              <div className="mt-4 text-sm text-gray-500">
+                {filteredAndSortedProducts.length} products found
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Main Content */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+          <div className="lg:grid lg:grid-cols-4 lg:gap-8">
+            
+            {/* Filters Sidebar */}
+            <div className={`lg:col-span-1 ${showFilters ? 'block' : 'hidden lg:block'}`}>
+              <div className="bg-white rounded-lg shadow-md p-6 sticky top-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Filters</h3>
+                  <button
+                    onClick={() => setShowFilters(false)}
+                    className="lg:hidden text-gray-400 hover:text-gray-500"
+                  >
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Price Range Filter */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Price Range
+                  </label>
+                  <div className="space-y-2">
+                    <input
+                      type="range"
+                      min="0"
+                      max={maxPrice}
+                      value={priceRange[1]}
+                      onChange={(e) => setPriceRange([priceRange[0], parseInt(e.target.value)])}
+                      className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+                    />
+                    <div className="flex justify-between text-sm text-gray-600">
+                      <span>${priceRange[0]}</span>
+                      <span>${priceRange[1]}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Sort Options */}
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Sort By
+                  </label>
+                  <select
+                    value={`${sortBy}-${sortOrder}`}
+                    onChange={(e) => {
+                      const [newSortBy, newSortOrder] = e.target.value.split('-') as ['name' | 'price' | 'discount', 'asc' | 'desc'];
+                      setSortBy(newSortBy);
+                      setSortOrder(newSortOrder);
+                    }}
+                    className="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-{{ conversion_colors.primary or 'blue-500' }} focus:border-{{ conversion_colors.primary or 'blue-500' }}"
+                  >
+                    <option value="name-asc">Name (A-Z)</option>
+                    <option value="name-desc">Name (Z-A)</option>
+                    <option value="price-asc">Price (Low to High)</option>
+                    <option value="price-desc">Price (High to Low)</option>
+                    <option value="discount-desc">Highest Discount</option>
+                  </select>
+                </div>
+
+                {/* Clear Filters */}
+                <button
+                  onClick={() => {
+                    setPriceRange([0, maxPrice]);
+                    setSortBy('name');
+                    setSortOrder('asc');
+                  }}
+                  className="w-full text-{{ conversion_colors.primary or 'blue-600' }} hover:text-{{ conversion_colors.primary or 'blue-800' }} font-medium text-sm"
+                >
+                  Clear All Filters
+                </button>
+              </div>
+            </div>
+
+            {/* Products Grid */}
+            <div className="lg:col-span-3">
+              {/* Mobile Filter Toggle */}
+              <div className="lg:hidden mb-4">
+                <button
+                  onClick={() => setShowFilters(true)}
+                  className="flex items-center space-x-2 bg-white border border-gray-300 rounded-md px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.207A1 1 0 013 6.5V4z" />
+                  </svg>
+                  <span>Filters</span>
+                </button>
+              </div>
+
+              {/* Error State */}
+              {error && (
+                <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <div className="flex items-center space-x-2">
+                    <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                    </svg>
+                    <p className="text-red-700">
+                      Unable to load products: {error}
+                    </p>
+                  </div>
+                </div>
+              )}
+
+              {/* Loading State */}
+              {loading ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[...Array(9)].map((_, i) => (
+                    <div key={i} className="bg-white rounded-lg shadow-md animate-pulse">
+                      <div className="aspect-square bg-gray-200 rounded-t-lg"></div>
+                      <div className="p-4 space-y-3">
+                        <div className="h-4 bg-gray-200 rounded"></div>
+                        <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                        <div className="h-8 bg-gray-200 rounded"></div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : filteredAndSortedProducts.length === 0 ? (
+                <div className="text-center py-12">
+                  <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2 2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                  </svg>
+                  <h3 className="mt-2 text-sm font-medium text-gray-900">No products found</h3>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Try adjusting your filters or browse other categories.
+                  </p>
+                  <div className="mt-6">
+                    <a
+                      href="/categories"
+                      className="inline-flex items-center px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-{{ conversion_colors.primary or 'blue-600' }} hover:bg-{{ conversion_colors.primary or 'blue-700' }}"
+                    >
+                      Browse All Categories
+                    </a>
+                  </div>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {filteredAndSortedProducts.map((product) => (
+                    <ProductCard
+                      key={product.id}
+                      product={product}
+                    />
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <Footer
+          brandName={brandName}
+          description={`Shop the best ${category.name.toLowerCase()} at ${brandName}. Quality products with fast shipping and great customer service.`}
+          categories={categories}
+          socialLinks={{
+            facebook: "https://facebook.com/{{ brandName|kebab_case }}",
+            twitter: "https://twitter.com/{{ brandName|kebab_case }}",
+            instagram: "https://instagram.com/{{ brandName|kebab_case }}"
+          }}
+        />
+      </div>
+    </>
+  );
+};
+
+export const getStaticPaths: GetStaticPaths = async () => {
+  // Generate paths for all categories
+  const categories = {{ categories | tojson if categories else '["electronics", "fashion", "home", "sports", "books", "toys"]' }};
+  
+  const paths = categories.map((category: string) => ({
+    params: { slug: category.toLowerCase().replace(' ', '-') }
+  }));
+
+  return {
+    paths,
+    fallback: true
+  };
+};
+
+export const getStaticProps: GetStaticProps = async ({ params }) => {
+  const slug = params?.slug as string;
+  const categoryName = slug.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
+  
+  return {
+    props: {
+      brandName: "{{ brand_name }}",
+      categories: {{ categories | tojson if categories else '["Electronics", "Fashion", "Home", "Sports", "Books", "Toys"]' }},
+      category: {
+        name: categoryName,
+        slug: slug,
+        description: `Discover amazing ${categoryName.toLowerCase()} deals at unbeatable prices. Quality products with fast shipping and excellent customer service.`
+      },
+      seoData: {
+        title: `${categoryName} - {{ brand_name }} | Best Deals Online`,
+        description: `Shop the best ${categoryName.toLowerCase()} at {{ brand_name }}. Quality products at unbeatable prices with fast, free shipping.`,
+        keywords: [categoryName.toLowerCase(), "deals", "discount", "online shopping", "{{ brand_name|lower }}"]
+      },
+      sheetsConfig: {
+        sheetId: "{{ sheets_config.sheet_id }}",
+        range: "{{ sheets_config.range_name or 'Sheet1!A:J' }}"
+      }
+    },
+    revalidate: 300
+  };
+};
+
+export default CategoryPage;

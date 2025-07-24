@@ -1,0 +1,353 @@
+import React from 'react';
+import Head from 'next/head';
+import { GetStaticProps } from 'next';
+import Hero from '../components/Hero';
+import ProductCard from '../components/ProductCard';
+import Navigation from '../components/Navigation';
+import Footer from '../components/Footer';
+import useGoogleSheets from '../hooks/useGoogleSheets';
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  image_url: string;
+  affiliate_url: string;
+  category: string;
+  description?: string;
+  discount_percent?: number;
+  is_featured: boolean;
+  stock_status: 'in_stock' | 'low_stock' | 'out_of_stock';
+}
+
+interface HomePageProps {
+  brandName: string;
+  description: string;
+  categories: string[];
+  seoData: {
+    title: string;
+    description: string;
+    keywords: string[];
+  };
+  heroData: {
+    tagline: string;
+    description: string;
+    ctaText: string;
+    ctaLink: string;
+    heroImage?: string;
+  };
+  sheetsConfig: {
+    sheetId: string;
+    range: string;
+  };
+}
+
+const HomePage: React.FC<HomePageProps> = ({
+  brandName,
+  description,
+  categories,
+  seoData,
+  heroData,
+  sheetsConfig
+}) => {
+  const { products, loading, error } = useGoogleSheets({
+    sheetId: sheetsConfig.sheetId,
+    range: sheetsConfig.range,
+    cacheDuration: 300000 // 5 minutes
+  });
+
+  // Filter products for different sections
+  const featuredProducts = products.filter(p => p.is_featured).slice(0, 8);
+  const discountedProducts = products.filter(p => p.discount_percent && p.discount_percent > 0).slice(0, 6);
+  const latestProducts = products.slice(0, 12);
+
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "name": brandName,
+    "description": seoData.description,
+    "url": "{{ domain or 'https://example.com' }}",
+    "potentialAction": {
+      "@type": "SearchAction",
+      "target": "{{ domain or 'https://example.com' }}/search?q={search_term_string}",
+      "query-input": "required name=search_term_string"
+    },
+    "sameAs": [
+      "https://facebook.com/{{ brandName|kebab_case }}",
+      "https://twitter.com/{{ brandName|kebab_case }}",
+      "https://instagram.com/{{ brandName|kebab_case }}"
+    ]
+  };
+
+  return (
+    <>
+      <Head>
+        <title>{seoData.title}</title>
+        <meta name="description" content={seoData.description} />
+        <meta name="keywords" content={seoData.keywords.join(', ')} />
+        <meta name="viewport" content="width=device-width, initial-scale=1" />
+        
+        {/* Open Graph */}
+        <meta property="og:title" content={seoData.title} />
+        <meta property="og:description" content={seoData.description} />
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="{{ domain or 'https://example.com' }}" />
+        <meta property="og:site_name" content={brandName} />
+        
+        {/* Twitter Card */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={seoData.title} />
+        <meta name="twitter:description" content={seoData.description} />
+        
+        {/* Favicon */}
+        <link rel="icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+        
+        {/* Canonical URL */}
+        <link rel="canonical" href="{{ domain or 'https://example.com' }}" />
+        
+        {/* JSON-LD Structured Data */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
+        
+        {/* Preconnect to external domains for performance */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://images.unsplash.com" />
+      </Head>
+
+      <div className="min-h-screen bg-gray-50">
+        {/* Navigation */}
+        <Navigation
+          brandName={brandName}
+          categories={categories}
+          showSearch={true}
+        />
+
+        {/* Hero Section */}
+        <Hero
+          brandName={brandName}
+          tagline={heroData.tagline}
+          description={heroData.description}
+          ctaText={heroData.ctaText}
+          ctaLink={heroData.ctaLink}
+          heroImage={heroData.heroImage}
+          niche="{{ niche or 'general' }}"
+        />
+
+        {/* Main Content */}
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          
+          {/* Error State */}
+          {error && (
+            <div className="mb-8 p-4 bg-red-50 border border-red-200 rounded-lg">
+              <div className="flex items-center space-x-2">
+                <svg className="w-5 h-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
+                  <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+                </svg>
+                <p className="text-red-700">
+                  Unable to load products: {error}
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Featured Products */}
+          {featuredProducts.length > 0 && (
+            <section className="mb-16">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-3xl font-bold text-gray-900">Featured Products</h2>
+                <a
+                  href="/categories"
+                  className="text-{{ conversion_colors.primary or 'blue-600' }} hover:text-{{ conversion_colors.primary or 'blue-800' }} font-medium"
+                >
+                  View All →
+                </a>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {featuredProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Hot Deals Section */}
+          {discountedProducts.length > 0 && (
+            <section className="mb-16">
+              <div className="bg-gradient-to-r from-red-500 to-pink-500 rounded-lg p-8 text-white mb-8">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-3xl font-bold mb-2">🔥 Hot Deals</h2>
+                    <p className="text-red-100">Limited time offers - don't miss out!</p>
+                  </div>
+                  <div className="text-right">
+                    <div className="bg-white/20 rounded-lg px-4 py-2">
+                      <span className="text-sm font-medium">Sale ends in:</span>
+                      <div className="text-2xl font-bold">24:00:00</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+                {discountedProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                  />
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Latest Products */}
+          <section className="mb-16">
+            <div className="flex items-center justify-between mb-8">
+              <h2 className="text-3xl font-bold text-gray-900">Latest Products</h2>
+              <a
+                href="/categories"
+                className="text-{{ conversion_colors.primary or 'blue-600' }} hover:text-{{ conversion_colors.primary or 'blue-800' }} font-medium"
+              >
+                View All →
+              </a>
+            </div>
+            
+            {loading ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {[...Array(8)].map((_, i) => (
+                  <div key={i} className="bg-white rounded-lg shadow-md animate-pulse">
+                    <div className="aspect-square bg-gray-200 rounded-t-lg"></div>
+                    <div className="p-4 space-y-3">
+                      <div className="h-4 bg-gray-200 rounded"></div>
+                      <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                      <div className="h-8 bg-gray-200 rounded"></div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                {latestProducts.map((product) => (
+                  <ProductCard
+                    key={product.id}
+                    product={product}
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+
+          {/* Categories Section */}
+          <section className="mb-16">
+            <div className="text-center mb-8">
+              <h2 className="text-3xl font-bold text-gray-900 mb-4">Shop by Category</h2>
+              <p className="text-gray-600">Find exactly what you're looking for</p>
+            </div>
+            
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {categories.slice(0, 6).map((category) => (
+                <a
+                  key={category}
+                  href={`/category/${category.toLowerCase().replace(' ', '-')}`}
+                  className="group bg-white rounded-lg shadow-md hover:shadow-lg transition-shadow p-6 text-center"
+                >
+                  <div className="w-12 h-12 mx-auto mb-3 bg-{{ conversion_colors.primary or 'blue-100' }} rounded-lg flex items-center justify-center group-hover:bg-{{ conversion_colors.primary or 'blue-200' }} transition-colors">
+                    <svg className="w-6 h-6 text-{{ conversion_colors.primary or 'blue-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+                    </svg>
+                  </div>
+                  <h3 className="font-medium text-gray-900 group-hover:text-{{ conversion_colors.primary or 'blue-600' }} transition-colors">
+                    {category}
+                  </h3>
+                </a>
+              ))}
+            </div>
+          </section>
+
+          {/* Trust Signals Section */}
+          <section className="bg-white rounded-lg shadow-md p-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
+              <div>
+                <div className="w-16 h-16 mx-auto mb-4 bg-green-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Free Shipping</h3>
+                <p className="text-gray-600">On orders over $50</p>
+              </div>
+              
+              <div>
+                <div className="w-16 h-16 mx-auto mb-4 bg-blue-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">30-Day Returns</h3>
+                <p className="text-gray-600">Money back guarantee</p>
+              </div>
+              
+              <div>
+                <div className="w-16 h-16 mx-auto mb-4 bg-purple-100 rounded-full flex items-center justify-center">
+                  <svg className="w-8 h-8 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                  </svg>
+                </div>
+                <h3 className="text-lg font-semibold text-gray-900 mb-2">Secure Checkout</h3>
+                <p className="text-gray-600">SSL encrypted payments</p>
+              </div>
+            </div>
+          </section>
+        </main>
+
+        {/* Footer */}
+        <Footer
+          brandName={brandName}
+          description={description}
+          categories={categories}
+          socialLinks={{
+            facebook: "https://facebook.com/{{ brandName|kebab_case }}",
+            twitter: "https://twitter.com/{{ brandName|kebab_case }}",
+            instagram: "https://instagram.com/{{ brandName|kebab_case }}"
+          }}
+        />
+      </div>
+    </>
+  );
+};
+
+export const getStaticProps: GetStaticProps = async () => {
+  // This would typically fetch from a CMS or config file
+  return {
+    props: {
+      brandName: "{{ brand_name }}",
+      description: "{{ description }}",
+      categories: {{ categories | tojson if categories else '["Electronics", "Fashion", "Home", "Sports", "Books", "Toys"]' }},
+      seoData: {
+        title: "{{ seo.meta_title if seo else brand_name + ' - Best Deals Online' }}",
+        description: "{{ seo.meta_description if seo else 'Find the best deals on ' + brand_name + '. Quality products at unbeatable prices with fast shipping.' }}",
+        keywords: {{ seo.keywords | tojson if seo else '["deals", "online shopping", "discount", "quality products"]' }}
+      },
+      heroData: {
+        tagline: "{{ hero_tagline or 'Amazing Deals on' }}",
+        description: "{{ hero_description or 'Discover quality products at unbeatable prices. Shop with confidence and enjoy fast, free shipping on orders over $50.' }}",
+        ctaText: "{{ cta_text or 'Shop Now' }}",
+        ctaLink: "{{ cta_link or '/categories' }}",
+        heroImage: "{{ hero_image or '' }}"
+      },
+      sheetsConfig: {
+        sheetId: "{{ sheets_config.sheet_id }}",
+        range: "{{ sheets_config.range_name or 'Sheet1!A:J' }}"
+      }
+    },
+    revalidate: 300 // Revalidate every 5 minutes
+  };
+};
+
+export default HomePage;

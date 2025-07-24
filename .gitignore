@@ -1,0 +1,153 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Virtual environments
+.env
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+venv_linux/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Logs
+*.log
+logs/
+website_generator.log
+
+# Test outputs
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+test-results/
+*.cover
+.hypothesis/
+coverage/
+
+# Generated content
+generated/
+!generated/.gitkeep
+
+# Research cache
+research/cache/
+research/scraped_docs/
+research/temp/
+.research_cache/
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Database
+*.db
+*.sqlite3
+mongodb_data/
+postgres-data/
+redis-data/
+
+# Node.js (for generated websites)
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Temporary files
+*.tmp
+*.temp
+*.pid
+*.seed
+*.pid.lock
+.cache/
+
+# Python specific
+instance/
+.webassets-cache
+.scrapy
+*.manifest
+*.spec
+pip-log.txt
+pip-delete-this-directory.txt
+.mypy_cache/
+.dmypy.json
+dmypy.json
+.pyre/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# pyenv
+.python-version
+
+# Backup files
+*.bak
+*.backup
+*.orig
+
+# Archives
+*.zip
+*.tar.gz
+*.tgz
+*.rar
+
+# Docker
+docker-compose.override.yml
+
+# Local development files
+.dev-deps-installed
+
+# Legacy files to ignore
+dontlookinhere/
+INITIAL.md
+php-agentic-framework/
+backend/
+frontend/
+nginx.conf
+test-system.sh
+
+# Keep important project files
+!PRPs/
+!agents/
+!tools/
+!templates/
+!tests/
+!config/

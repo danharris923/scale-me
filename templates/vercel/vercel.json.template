@@ -1,0 +1,108 @@
+{
+  "version": 2,
+  "name": "{{ project_name|kebab_case }}",
+  "alias": [
+    "{{ domain.replace('https://', '').replace('http://', '') if domain else project_name|kebab_case + '.vercel.app' }}"
+  ],
+  "build": {
+    "env": {
+      "NODE_ENV": "production",
+      "NEXT_TELEMETRY_DISABLED": "1"
+    }
+  },
+  "env": {
+    {% for key, value in env_vars.items() %}
+    "{{ key }}": "{{ value }}"{% if not loop.last %},{% endif %}
+    {% endfor %}
+  },
+  "functions": {
+    {% for func_path, config in functions.items() %}
+    "{{ func_path }}": {
+      "runtime": "{{ config.runtime }}",
+      "memory": {{ config.memory }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  },
+  "redirects": [
+    {% for redirect in redirects %}
+    {
+      "source": "{{ redirect.source }}",
+      "destination": "{{ redirect.destination }}",
+      "permanent": {{ redirect.permanent|lower }}
+    }{% if not loop.last %},{% endif %}
+    {% endfor %}
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, s-maxage=300, stale-while-revalidate=600"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "X-XSS-Protection",
+          "value": "1; mode=block"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "camera=(), microphone=(), geolocation=()"
+        }
+      ]
+    },
+    {
+      "source": "/images/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/_next/static/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/sitemap.xml",
+      "destination": "/api/sitemap"
+    },
+    {
+      "source": "/robots.txt",
+      "destination": "/api/robots"
+    }
+  ],
+  "regions": ["iad1", "sfo1"],
+  "github": {
+    "enabled": false
+  },
+  "framework": "nextjs",
+  "installCommand": "npm install",
+  "buildCommand": "npm run build",
+  "devCommand": "npm run dev",
+  "outputDirectory": ".next"
+}

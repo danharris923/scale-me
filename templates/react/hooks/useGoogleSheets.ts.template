@@ -1,0 +1,180 @@
+import { useState, useEffect, useCallback } from 'react';
+
+interface Product {
+  id: string;
+  name: string;
+  price: number;
+  image_url: string;
+  affiliate_url: string;
+  category: string;
+  description?: string;
+  discount_percent?: number;
+  is_featured: boolean;
+  stock_status: 'in_stock' | 'low_stock' | 'out_of_stock';
+}
+
+interface UseGoogleSheetsResult {
+  products: Product[];
+  loading: boolean;
+  error: string | null;
+  refetch: () => Promise<void>;
+}
+
+interface UseGoogleSheetsOptions {
+  sheetId: string;
+  range?: string;
+  cacheDuration?: number;
+  category?: string;
+}
+
+const useGoogleSheets = ({
+  sheetId,
+  range = 'Sheet1!A:J',
+  cacheDuration = 300000, // 5 minutes default
+  category
+}: UseGoogleSheetsOptions): UseGoogleSheetsResult => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchProducts = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Build query parameters
+      const params = new URLSearchParams({
+        sheetId,
+        range,
+        ...(category && { category }),
+        timestamp: Date.now().toString() // Cache busting
+      });
+
+      const response = await fetch(`/api/sheets?${params}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to fetch products: ${response.statusText}`);
+      }
+
+      const data = await response.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
+      // Validate and transform the data
+      const validatedProducts = data.products.map((row: any[], index: number) => {
+        try {
+          return {
+            id: row[0] || `product-${index}`,
+            name: row[1] || 'Unnamed Product',
+            price: parseFloat(row[2]) || 0,
+            image_url: row[3] || '/placeholder-product.jpg',
+            affiliate_url: row[4] || '#',
+            category: row[5] || 'Uncategorized',
+            description: row[6] || '',
+            discount_percent: row[7] ? parseFloat(row[7]) : null,
+            is_featured: row[8] === 'TRUE' || row[8] === '1' || row[8] === true,
+            stock_status: (['in_stock', 'low_stock', 'out_of_stock'].includes(row[9]) 
+              ? row[9] 
+              : 'in_stock') as 'in_stock' | 'low_stock' | 'out_of_stock'
+          };
+        } catch (err) {
+          console.warn(`Error processing product row ${index}:`, err);
+          return null;
+        }
+      }).filter(Boolean);
+
+      setProducts(validatedProducts);
+      
+      // Cache the results
+      if (typeof window !== 'undefined' && window.localStorage) {
+        try {
+          const cacheKey = `sheets-${sheetId}-${range}-${category || 'all'}`;
+          const cacheData = {
+            products: validatedProducts,
+            timestamp: Date.now()
+          };
+          localStorage.setItem(cacheKey, JSON.stringify(cacheData));
+        } catch (err) {
+          console.warn('Failed to cache products:', err);
+        }
+      }
+
+    } catch (err) {
+      console.error('Error fetching products:', err);
+      setError(err instanceof Error ? err.message : 'Unknown error occurred');
+      
+      // Try to load from cache as fallback
+      if (typeof window !== 'undefined' && window.localStorage) {
+        try {
+          const cacheKey = `sheets-${sheetId}-${range}-${category || 'all'}`;
+          const cached = localStorage.getItem(cacheKey);
+          if (cached) {
+            const cacheData = JSON.parse(cached);
+            setProducts(cacheData.products || []);
+            console.warn('Loaded products from cache due to fetch error');
+          }
+        } catch (cacheErr) {
+          console.warn('Failed to load from cache:', cacheErr);
+        }
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [sheetId, range, category]);
+
+  // Check cache on mount
+  useEffect(() => {
+    const loadFromCache = () => {
+      if (typeof window !== 'undefined' && window.localStorage) {
+        try {
+          const cacheKey = `sheets-${sheetId}-${range}-${category || 'all'}`;
+          const cached = localStorage.getItem(cacheKey);
+          
+          if (cached) {
+            const cacheData = JSON.parse(cached);
+            const age = Date.now() - cacheData.timestamp;
+            
+            if (age < cacheDuration) {
+              setProducts(cacheData.products || []);
+              setLoading(false);
+              return true; // Cache hit
+            }
+          }
+        } catch (err) {
+          console.warn('Cache check failed:', err);
+        }
+      }
+      return false; // Cache miss
+    };
+
+    // If cache miss or no cache, fetch fresh data
+    if (!loadFromCache()) {
+      fetchProducts();
+    }
+  }, [sheetId, range, category, cacheDuration, fetchProducts]);
+
+  // Auto-refresh interval
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchProducts();
+    }, cacheDuration);
+
+    return () => clearInterval(interval);
+  }, [fetchProducts, cacheDuration]);
+
+  return {
+    products,
+    loading,
+    error,
+    refetch: fetchProducts
+  };
+};
+
+export default useGoogleSheets;
