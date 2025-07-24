@@ -1,0 +1,21 @@
+Name,Description,Price,Image URL,Affiliate URL,Category,Stock Status
+"iPhone 15 Pro Max","Latest Apple flagship with titanium design and A17 Pro chip",1199.99,https://images.unsplash.com/photo-1696446701796-da61225697cc?w=400,https://amzn.to/iphone15pro,Smartphones,in_stock
+"MacBook Pro 16","M3 Max chip with 36GB RAM for ultimate performance",3499.99,https://images.unsplash.com/photo-1517336714731-489689fd1ca8?w=400,https://amzn.to/macbookpro16,Laptops,in_stock
+"AirPods Pro 2","Active noise cancellation with USB-C charging case",249.99,https://images.unsplash.com/photo-1600294037681-c80b4cb5b434?w=400,https://amzn.to/airpodspro2,Audio,in_stock
+"iPad Air","10.9-inch display with M1 chip and 5G support",599.99,https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?w=400,https://amzn.to/ipadair,Tablets,low_stock
+"Apple Watch Ultra 2","Rugged smartwatch with advanced health tracking",799.99,https://images.unsplash.com/photo-1579586337278-3befd40fd17a?w=400,https://amzn.to/applewatch,Wearables,in_stock
+"Samsung Galaxy S24 Ultra","Android flagship with S Pen and 200MP camera",1299.99,https://images.unsplash.com/photo-1610945415295-d9bbf067e59c?w=400,https://amzn.to/galaxys24,Smartphones,in_stock
+"Sony WH-1000XM5","Industry-leading noise cancelling headphones",399.99,https://images.unsplash.com/photo-1545127398-14699f92334b?w=400,https://amzn.to/sonyxm5,Audio,in_stock
+"Dell XPS 15","Premium Windows laptop with OLED display",1899.99,https://images.unsplash.com/photo-1593642702821-c8da6771f0c6?w=400,https://amzn.to/dellxps15,Laptops,in_stock
+"Nintendo Switch OLED","Hybrid gaming console with vibrant OLED screen",349.99,https://images.unsplash.com/photo-1578303512597-81e6cc155b3e?w=400,https://amzn.to/switcholed,Gaming,low_stock
+"Kindle Oasis","Premium e-reader with warm light and page turn buttons",249.99,https://images.unsplash.com/photo-1611532736597-de2d4265fba3?w=400,https://amzn.to/kindleoasis,E-Readers,in_stock
+"GoPro Hero 12","Action camera with 5.3K video and HDR",449.99,https://images.unsplash.com/photo-1606986628025-35d57e735ae4?w=400,https://amzn.to/gopro12,Cameras,in_stock
+"Bose QuietComfort Ultra","Premium noise-cancelling earbuds with spatial audio",299.99,https://images.unsplash.com/photo-1590658268037-6bf12165a8df?w=400,https://amzn.to/boseqc,Audio,in_stock
+"LG C3 OLED 65","4K OLED TV with gaming features and webOS",1799.99,https://images.unsplash.com/photo-1593359677879-a4bb92f829d1?w=400,https://amzn.to/lgc3oled,TVs,in_stock
+"PlayStation 5","Next-gen gaming console with ray tracing support",499.99,https://images.unsplash.com/photo-1607853202273-797f1c22a38e?w=400,https://amzn.to/ps5console,Gaming,out_of_stock
+"Xbox Series X","Powerful gaming console with 4K 120fps gaming",499.99,https://images.unsplash.com/photo-1621259182978-fbf93132d53d?w=400,https://amzn.to/xboxseriesx,Gaming,low_stock
+"Logitech MX Master 3S","Premium wireless mouse for productivity",99.99,https://images.unsplash.com/photo-1527814050087-3793815479db?w=400,https://amzn.to/mxmaster3s,Accessories,in_stock
+"Mechanical Keyboard RGB","Cherry MX switches with per-key RGB lighting",149.99,https://images.unsplash.com/photo-1587829741301-dc798b83add3?w=400,https://amzn.to/mechkeyboard,Accessories,in_stock
+"4K Webcam","Professional webcam with auto-focus and HDR",199.99,https://images.unsplash.com/photo-1587826080692-f439cd0b70da?w=400,https://amzn.to/4kwebcam,Accessories,in_stock
+"Samsung T7 SSD 2TB","Portable SSD with fast transfer speeds",189.99,https://images.unsplash.com/photo-1597872200969-2b65d56bd16b?w=400,https://amzn.to/samsungssd,Storage,in_stock
+"DJI Mini 3 Pro","Compact drone with 4K camera and obstacle avoidance",759.99,https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=400,https://amzn.to/djimini3,Drones,in_stock
