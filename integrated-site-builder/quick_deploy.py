@@ -93,28 +93,28 @@ def create_site_files(server_url: str, output_dir: str) -> bool:
         json.dump(package_json, f, indent=2)
     
     # Main index page
-    index_content = f'''import Head from 'next/head'
-import {{ useState, useEffect }} from 'react'
+    index_content = '''import Head from 'next/head'
+import { useState, useEffect } from 'react'
 
-export default function Home() {{
+export default function Home() {
   const [products, setProducts] = useState([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {{
+  useEffect(() => {
     fetchProducts()
-  }}, [])
+  }, [])
 
-  const fetchProducts = async () => {{
-    try {{
+  const fetchProducts = async () => {
+    try {
       const response = await fetch('/api/products')
       const data = await response.json()
       setProducts(data.products || [])
-    }} catch (error) {{
+    } catch (error) {
       console.error('Error fetching products:', error)
-    }} finally {{
+    } finally {
       setLoading(false)
-    }}
-  }}
+    }
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -146,29 +146,29 @@ export default function Home() {{
       <main className="container mx-auto px-4 py-12">
         <h2 className="text-3xl font-bold text-center mb-8">Featured Gear</h2>
         
-        {{loading ? (
+        {loading ? (
           <div className="text-center py-12">
             <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600 mx-auto"></div>
             <p className="mt-4 text-gray-600">Loading outdoor gear...</p>
           </div>
         ) : (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {{products.map((product, index) => (
-              <div key={{index}} className="bg-white rounded-lg shadow-lg overflow-hidden">
+            {products.map((product, index) => (
+              <div key={index} className="bg-white rounded-lg shadow-lg overflow-hidden">
                 <img 
-                  src={{product.image_url || '/placeholder.jpg'}} 
-                  alt={{product.name}}
+                  src={product.image_url || '/placeholder.jpg'} 
+                  alt={product.name}
                   className="w-full h-48 object-cover"
                 />
                 <div className="p-4">
-                  <h3 className="font-semibold text-lg mb-2">{{product.name}}</h3>
-                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">{{product.description}}</p>
+                  <h3 className="font-semibold text-lg mb-2">{product.name}</h3>
+                  <p className="text-gray-600 text-sm mb-3 line-clamp-2">{product.description}</p>
                   <div className="flex justify-between items-center">
                     <span className="text-2xl font-bold text-green-600">
-                      ${{typeof product.price === 'number' ? product.price.toFixed(2) : product.price}}
+                      ${typeof product.price === 'number' ? product.price.toFixed(2) : product.price}
                     </span>
                     <a 
-                      href={{product.affiliate_url}}
+                      href={product.affiliate_url}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded"
@@ -178,9 +178,9 @@ export default function Home() {{
                   </div>
                 </div>
               </div>
-            ))}}
+            ))}
           </div>
-        )}}
+        )}
       </main>
 
       {/* Footer */}
@@ -194,7 +194,7 @@ export default function Home() {{
       </footer>
     </div>
   )
-}}'''
+}'''
     
     with open(site_dir / "pages" / "index.js", "w") as f:
         f.write(index_content)
@@ -232,7 +232,7 @@ export default function Home() {{
     
     // Fallback sample data
     const fallbackData = {{
-      count: 3,
+      count: {len(sample_products) if sample_products else 0},
       products: {json.dumps(sample_products, indent=6) if sample_products else "[]"},
       source: 'fallback',
       error: error.message,
@@ -397,7 +397,7 @@ def main():
     repo_url = "https://github.com/danharris923/scale-me-testsite.git"
     
     # Step 1: Check server
-    print("\\n1. Checking GCS server...")
+    print("\n1. Checking GCS server...")
     server_status = check_server_status(server_url)
     if not server_status["success"]:
         print(f"❌ Server check failed: {server_status['error']}")
@@ -405,24 +405,24 @@ def main():
         sys.exit(1)
     
     # Step 2: Generate site
-    print("\\n2. Generating website...")
+    print("\n2. Generating website...")
     if not create_site_files(server_url, output_dir):
         print("❌ Failed to generate website files")
         sys.exit(1)
     
     # Step 3: Git setup and push
-    print("\\n3. Deploying to GitHub...")
+    print("\n3. Deploying to GitHub...")
     if not setup_git_and_push(output_dir, repo_url):
         print("❌ Failed to push to GitHub")
         sys.exit(1)
     
     # Success!
-    print("\\n🎉 DEPLOYMENT COMPLETE!")
+    print("\n🎉 DEPLOYMENT COMPLETE!")
     print("=" * 50)
     print(f"✅ Website generated with {server_status['products_count']} products")
     print(f"✅ Pushed to: {repo_url}")
     print(f"✅ Connected to API: {server_url}")
-    print("\\n📋 Next Steps:")
+    print("\n📋 Next Steps:")
     print("1. Check your GitHub repo for the updated files")
     print("2. Connect the repo to Vercel for automatic deployment")
     print(f"3. Set SCRAPER_API_URL environment variable to: {server_url}")
