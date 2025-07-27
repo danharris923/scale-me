@@ -1,0 +1,144 @@
+{
+  "site_config": {
+    "niche": "outdoor-adventure",
+    "theme": "adventure-optimized",
+    "brand_name": "Adventure Gear Pro",
+    "tagline": "Your Ultimate Source for Outdoor Adventure Gear",
+    "description": "Discover the best hiking, camping, and outdoor adventure gear. From tents and backpacks to survival tools and hiking boots - we've got everything for your next adventure.",
+    "target_audience": "Outdoor enthusiasts, hikers, campers, and adventure seekers",
+    "primary_categories": [
+      "hiking-gear",
+      "camping-equipment", 
+      "outdoor-clothing",
+      "survival-tools",
+      "backpacks-bags",
+      "footwear",
+      "electronics",
+      "safety-gear"
+    ]
+  },
+  
+  "design_config": {
+    "color_scheme": {
+      "primary": "#2D5016",
+      "secondary": "#8FBC8F", 
+      "accent": "#F4A460",
+      "background": "#F5F5DC",
+      "text": "#2F4F2F",
+      "white": "#FFFFFF"
+    },
+    "typography": {
+      "headings": "Montserrat",
+      "body": "Open Sans",
+      "accent": "Roboto Slab"
+    },
+    "layout": "adventure-grid",
+    "hero_style": "mountain-backdrop",
+    "card_style": "outdoor-minimal"
+  },
+  
+  "content_strategy": {
+    "hero_headlines": [
+      "Gear Up for Your Next Adventure",
+      "Quality Outdoor Gear, Adventure-Ready Prices",
+      "From Trail to Summit - Find Your Perfect Gear"
+    ],
+    "value_propositions": [
+      "Curated outdoor gear from trusted brands",
+      "Expert reviews and buying guides",
+      "Best deals on camping and hiking equipment",
+      "Seasonal gear recommendations"
+    ],
+    "trust_signals": [
+      "10,000+ Happy Adventurers",
+      "Expert-Tested Gear",
+      "Price Match Guarantee",
+      "Free Shipping on Orders $50+"
+    ]
+  },
+  
+  "conversion_optimization": {
+    "primary_ctas": [
+      "Shop Now",
+      "Find My Gear", 
+      "View Deals",
+      "Get Adventure Ready"
+    ],
+    "urgency_triggers": [
+      "Limited Time Deal",
+      "Seasonal Special",
+      "While Supplies Last",
+      "Adventure Awaits"
+    ],
+    "social_proof": {
+      "enable_reviews": true,
+      "show_ratings": true,
+      "display_testimonials": true,
+      "trust_badges": ["secure_checkout", "money_back", "fast_shipping"]
+    }
+  },
+  
+  "product_mapping": {
+    "amazon_categories": [
+      "Sports & Outdoors > Outdoor Recreation > Camping & Hiking",
+      "Sports & Outdoors > Outdoor Recreation > Climbing",
+      "Sports & Outdoors > Outdoor Recreation > Water Sports"
+    ],
+    "cabelas_categories": [
+      "Camping",
+      "Hiking & Backpacking", 
+      "Hunting",
+      "Fishing",
+      "Outdoor Gear"
+    ],
+    "featured_brands": [
+      "Coleman",
+      "North Face",
+      "Patagonia",
+      "REI Co-op",
+      "Osprey",
+      "Merrell",
+      "Columbia"
+    ]
+  },
+  
+  "seo_optimization": {
+    "primary_keywords": [
+      "outdoor gear",
+      "camping equipment",
+      "hiking gear",
+      "adventure gear",
+      "outdoor clothing"
+    ],
+    "long_tail_keywords": [
+      "best camping gear for beginners",
+      "lightweight hiking equipment",
+      "outdoor gear deals",
+      "camping gear reviews",
+      "hiking backpack recommendations"
+    ],
+    "meta_description": "Find the best outdoor adventure gear at unbeatable prices. Expert-curated camping, hiking, and outdoor equipment from top brands. Free shipping on orders $50+.",
+    "schema_markup": {
+      "organization": true,
+      "products": true,
+      "reviews": true,
+      "breadcrumbs": true
+    }
+  },
+  
+  "api_integration": {
+    "data_sources": ["amazon", "cabelas"],
+    "update_frequency": "6h",
+    "cache_duration": "1h",
+    "fallback_enabled": true,
+    "product_filters": {
+      "min_rating": 4.0,
+      "min_reviews": 10,
+      "exclude_keywords": ["used", "refurbished", "broken"],
+      "price_range": {
+        "min": 10,
+        "max": 1000
+      }
+    }
+  }
+}
